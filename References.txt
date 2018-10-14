@@ -1,0 +1,4 @@
+1.	Adrian blog post – face clustering
+2.	PyPiper guide
+3.	OpenCV manual
+4.	StackOverflow
