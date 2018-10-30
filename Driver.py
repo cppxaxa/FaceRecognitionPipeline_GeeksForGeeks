@@ -18,11 +18,12 @@ if __name__ == "__main__":
         time.sleep(0.5)
     os.makedirs(EncodingsFolderPath)
 
-    pipeline = Pipeline(FramesProvider("Files source", sourcePath=FramesDirectoryPath) | 
-                        FaceEncoder("Encode faces") | 
-                        DatastoreManager("Store encoding", 
-                        encodingsOutputPath=EncodingsFolderPath), 
-                        n_threads = 3, quiet = True)
+    pipeline = Pipeline(
+                    FramesProvider("Files source", sourcePath=FramesDirectoryPath) | 
+                    FaceEncoder("Encode faces") | 
+                    DatastoreManager("Store encoding", 
+                    encodingsOutputPath=EncodingsFolderPath), 
+                    n_threads = 3, quiet = True)
     pbar = TqdmUpdate()
     pipeline.run(update_callback=pbar.update)
 

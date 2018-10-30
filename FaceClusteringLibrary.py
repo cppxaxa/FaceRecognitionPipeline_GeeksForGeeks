@@ -13,6 +13,7 @@ import face_recognition
 
 ''' Common utilities '''
 '''
+Credits: AndyP at StackOverflow
 The ResizeUtils provides resizing function to keep the aspect ratio intact
 '''
 class ResizeUtils:
@@ -260,7 +261,7 @@ class FaceImageGenerator:
     # The face bounding box is increased a little more for 
     # training purposes and we also created the exact 
     # annotation for each face image (similar to darknet YOLO)
-    # to easily adaptat the annotation for future use in supervised training
+    # to easily adapt the annotation for future use in supervised training
 	def GenerateImages(self, labels, OutputFolderName = "ClusteredFaces", 
                                             MontageOutputFolder = "Montage"):
 		output_directory = os.getcwd()
@@ -292,10 +293,8 @@ class FaceImageGenerator:
 			os.makedirs(FaceFolder)
 
 			idxs = np.where(labels == labelID)[0]
-			idxs = np.random.choice(idxs, size=min(25, len(idxs)), replace=False)
 
 			# initialize the list of faces to include in the montage
-			# faces = []
 			portraits = []
 
 			# loop over the sampled indexes
