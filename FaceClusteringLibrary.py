@@ -82,7 +82,7 @@ class FramesGenerator:
         FrameWrittenCount = 1
         while CurrentFrame < TotalFrames:
             _, frame = cap.read()
-            if (frame == None):
+            if (frame is None):
                 continue
             
             if fpsCounter > fps:
