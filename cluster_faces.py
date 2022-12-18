@@ -6,6 +6,7 @@ import pickle
 import cv2
 import shutil
 import time
+import FaceClusteringLibrary
 
 class FaceClusterUtility:
 	def __init__(self, EncodingFilePath):
@@ -43,6 +44,7 @@ class FaceClusterUtility:
 class FaceImageGenerator:
 	def __init__(self, EncodingFilePath):
 		self.EncodingFilePath = EncodingFilePath
+		self.resizeUtils = FaceClusteringLibrary.ResizeUtils()
 
 	def GenerateImages(self, labels, OutputFolderName = "ClusteredFaces", MontageOutputFolder = "Montage"):
 		output_directory = os.getcwd()
@@ -114,7 +116,7 @@ class FaceImageGenerator:
 				if len(portraits) < 25:
 					portraits.append(portrait)
 
-				portrait = rescale_by_width(portrait, 400)
+				portrait = self.resizeUtils.rescale_by_width(portrait, 400)
 
 				FaceFilename = "face_" + str(counter) + ".jpg"
 
