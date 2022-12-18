@@ -5,7 +5,6 @@ if __name__ == "__main__":
     framesGenerator = FramesGenerator("Footage.mp4")
     framesGenerator.GenerateFrames("Frames")
 
-
     ''' Design and run the face clustering pipeline '''
     CurrentPath = os.getcwd()
     FramesDirectory = "Frames"
@@ -19,17 +18,16 @@ if __name__ == "__main__":
     os.makedirs(EncodingsFolderPath)
 
     pipeline = Pipeline(
-                    FramesProvider("Files source", sourcePath=FramesDirectoryPath) | 
-                    FaceEncoder("Encode faces") | 
-                    DatastoreManager("Store encoding", 
-                    encodingsOutputPath=EncodingsFolderPath), 
-                    n_threads = 3, quiet = True)
+        FramesProvider("Files source", sourcePath=FramesDirectoryPath) |
+        FaceEncoder("Encode faces") |
+        DatastoreManager("Store encoding",
+                         encodingsOutputPath=EncodingsFolderPath),
+        n_threads=3, quiet=True)
     pbar = TqdmUpdate()
     pipeline.run(update_callback=pbar.update)
 
     print()
     print('[INFO] Encodings extracted')
-
 
     ''' Merge all the encodings pickle files into one '''
     CurrentPath = os.getcwd()
@@ -47,13 +45,11 @@ if __name__ == "__main__":
     # To manage any delay in file writing
     time.sleep(0.5)
 
-
     ''' Start clustering process and generate output images with annotations '''
     EncodingPickleFilePath = "encodings.pickle"
-    
+
     faceClusterUtility = FaceClusterUtility(EncodingPickleFilePath)
     faceImageGenerator = FaceImageGenerator(EncodingPickleFilePath)
-    
+
     labelIDs = faceClusterUtility.Cluster()
     faceImageGenerator.GenerateImages(labelIDs, "ClusteredFaces", "Montage")
-
