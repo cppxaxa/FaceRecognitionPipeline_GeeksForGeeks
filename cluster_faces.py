@@ -8,170 +8,162 @@ import shutil
 import time
 import FaceClusteringLibrary
 
+
 class FaceClusterUtility:
-	def __init__(self, EncodingFilePath):
-		self.EncodingFilePath = EncodingFilePath
-	
-	def Cluster(self):
-		InputEncodingFile = self.EncodingFilePath
-		if not (os.path.isfile(InputEncodingFile) and os.access(InputEncodingFile, os.R_OK)):
-			print('The input encoding file, ' + str(InputEncodingFile) + ' does not exists or unreadable')
-			exit()
+    def __init__(self, EncodingFilePath):
+        self.EncodingFilePath = EncodingFilePath
 
-		NumberOfParallelJobs = -1
+    def Cluster(self):
+        InputEncodingFile = self.EncodingFilePath
+        if not (os.path.isfile(InputEncodingFile) and os.access(InputEncodingFile, os.R_OK)):
+            print('The input encoding file, ' + str(InputEncodingFile) + ' does not exists or unreadable')
+            exit()
 
-		# load the serialized face encodings + bounding box locations from
-		# disk, then extract the set of encodings to so we can cluster on
-		# them
-		print("[INFO] Loading encodings")
-		data = pickle.loads(open(InputEncodingFile, "rb").read())
-		data = np.array(data)
+        NumberOfParallelJobs = -1
 
-		encodings = [d["encoding"] for d in data]
+        # load the serialized face encodings + bounding box locations from
+        # disk, then extract the set of encodings to so we can cluster on
+        # them
+        print("[INFO] Loading encodings")
+        data = pickle.loads(open(InputEncodingFile, "rb").read())
+        data = np.array(data)
 
-		# cluster the embeddings
-		print("[INFO] Clustering")
-		clt = DBSCAN(eps=0.5, metric="euclidean", n_jobs=NumberOfParallelJobs)
-		clt.fit(encodings)
+        encodings = [d["encoding"] for d in data]
 
-		# determine the total number of unique faces found in the dataset
-		labelIDs = np.unique(clt.labels_)
-		numUniqueFaces = len(np.where(labelIDs > -1)[0])
-		print("[INFO] # unique faces: {}".format(numUniqueFaces))
+        # cluster the embeddings
+        print("[INFO] Clustering")
+        clt = DBSCAN(eps=0.5, metric="euclidean", n_jobs=NumberOfParallelJobs)
+        clt.fit(encodings)
 
-		return clt.labels_
+        # determine the total number of unique faces found in the dataset
+        labelIDs = np.unique(clt.labels_)
+        numUniqueFaces = len(np.where(labelIDs > -1)[0])
+        print("[INFO] # unique faces: {}".format(numUniqueFaces))
+
+        return clt.labels_
+
 
 class FaceImageGenerator:
-	def __init__(self, EncodingFilePath):
-		self.EncodingFilePath = EncodingFilePath
-		self.resizeUtils = FaceClusteringLibrary.ResizeUtils()
+    def __init__(self, EncodingFilePath):
+        self.EncodingFilePath = EncodingFilePath
+        self.resizeUtils = FaceClusteringLibrary.ResizeUtils()
 
-	def GenerateImages(self, labels, OutputFolderName = "ClusteredFaces", MontageOutputFolder = "Montage"):
-		output_directory = os.getcwd()
+    def GenerateImages(self, labels, OutputFolderName="ClusteredFaces", MontageOutputFolder="Montage"):
+        output_directory = os.getcwd()
 
-		OutputFolder = os.path.join(output_directory, OutputFolderName)
-		if not os.path.exists(OutputFolder):
-			os.makedirs(OutputFolder)
-		else:
-			shutil.rmtree(OutputFolder)
-			time.sleep(0.5)
-			os.makedirs(OutputFolder)
+        OutputFolder = os.path.join(output_directory, OutputFolderName)
+        if not os.path.exists(OutputFolder):
+            os.makedirs(OutputFolder)
+        else:
+            shutil.rmtree(OutputFolder)
+            time.sleep(0.5)
+            os.makedirs(OutputFolder)
 
-		MontageFolderPath = os.path.join(OutputFolder, MontageOutputFolder)
-		os.makedirs(MontageFolderPath)
+        MontageFolderPath = os.path.join(OutputFolder, MontageOutputFolder)
+        os.makedirs(MontageFolderPath)
 
-		data = pickle.loads(open(self.EncodingFilePath, "rb").read())
-		data = np.array(data)
+        data = pickle.loads(open(self.EncodingFilePath, "rb").read())
+        data = np.array(data)
 
-		labelIDs = np.unique(labels)
-		# loop over the unique face integers
-		for labelID in labelIDs:
-			# find all indexes into the `data` array that belong to the
-			# current label ID, then randomly sample a maximum of 25 indexes
-			# from the set
-			
-			print("[INFO] faces for face ID: {}".format(labelID))
+        labelIDs = np.unique(labels)
+        # loop over the unique face integers
+        for labelID in labelIDs:
+            # find all indexes into the `data` array that belong to the
+            # current label ID, then randomly sample a maximum of 25 indexes
+            # from the set
 
-			FaceFolder = os.path.join(OutputFolder, "Face_" + str(labelID))
-			os.makedirs(FaceFolder)
+            print("[INFO] faces for face ID: {}".format(labelID))
 
-			idxs = np.where(labels == labelID)[0]
-			idxs = np.random.choice(idxs, size=min(25, len(idxs)),
-				replace=False)
+            FaceFolder = os.path.join(OutputFolder, "Face_" + str(labelID))
+            os.makedirs(FaceFolder)
 
-			# initialize the list of faces to include in the montage
-			# faces = []
-			portraits = []
+            idxs = np.where(labels == labelID)[0]
+            idxs = np.random.choice(idxs, size=min(25, len(idxs)),
+                                    replace=False)
 
-			# loop over the sampled indexes
-			counter = 1
-			for i in idxs:
-				# load the input image and extract the face ROI
-				image = cv2.imread(data[i]["imagePath"])
-				(o_top, o_right, o_bottom, o_left) = data[i]["loc"]
+            # initialize the list of faces to include in the montage
+            # faces = []
+            portraits = []
 
-				height, width, channel = image.shape
+            # loop over the sampled indexes
+            counter = 1
+            for i in idxs:
+                # load the input image and extract the face ROI
+                image = cv2.imread(data[i]["imagePath"])
+                (o_top, o_right, o_bottom, o_left) = data[i]["loc"]
 
-				widthMargin = 100
-				heightMargin = 150
+                height, width, channel = image.shape
 
-				top = o_top - heightMargin
-				if top < 0:
-					top = 0
-				
-				bottom = o_bottom + heightMargin
-				if bottom > height:
-					bottom = height
-				
-				left = o_left - widthMargin
-				if left < 0:
-					left = 0
-				
-				right = o_right + widthMargin
-				if right > width:
-					right = width
+                widthMargin = 100
+                heightMargin = 150
 
-				portrait = image[top:bottom, left:right]
+                top = o_top - heightMargin
+                if top < 0:
+                    top = 0
 
-				if len(portraits) < 25:
-					portraits.append(portrait)
+                bottom = o_bottom + heightMargin
+                if bottom > height:
+                    bottom = height
 
-				portrait = self.resizeUtils.rescale_by_width(portrait, 400)
+                left = o_left - widthMargin
+                if left < 0:
+                    left = 0
 
-				FaceFilename = "face_" + str(counter) + ".jpg"
+                right = o_right + widthMargin
+                if right > width:
+                    right = width
 
-				FaceImagePath = os.path.join(FaceFolder, FaceFilename)
-				cv2.imwrite(FaceImagePath, portrait)
+                portrait = image[top:bottom, left:right]
 
+                if len(portraits) < 25:
+                    portraits.append(portrait)
 
+                portrait = self.resizeUtils.rescale_by_width(portrait, 400)
 
+                FaceFilename = "face_" + str(counter) + ".jpg"
 
+                FaceImagePath = os.path.join(FaceFolder, FaceFilename)
+                cv2.imwrite(FaceImagePath, portrait)
 
-				widthMargin = 20
-				heightMargin = 20
+                widthMargin = 20
+                heightMargin = 20
 
-				top = o_top - heightMargin
-				if top < 0:
-					top = 0
-				
-				bottom = o_bottom + heightMargin
-				if bottom > height:
-					bottom = height
-				
-				left = o_left - widthMargin
-				if left < 0:
-					left = 0
-				
-				right = o_right + widthMargin
-				if right > width:
-					right = width
+                top = o_top - heightMargin
+                if top < 0:
+                    top = 0
 
-				AnnotationFilename = "face_" + str(counter) + ".txt"
-				AnnotationFilePath = os.path.join(FaceFolder, AnnotationFilename)
-				
-				f = open(AnnotationFilePath, 'w')
-				f.write(str(labelID) + ' ' + str(left) + ' ' + str(top) + ' ' + str(right) + ' ' + str(bottom) + "\n")
-				f.close()
+                bottom = o_bottom + heightMargin
+                if bottom > height:
+                    bottom = height
 
+                left = o_left - widthMargin
+                if left < 0:
+                    left = 0
 
-				counter += 1
+                right = o_right + widthMargin
+                if right > width:
+                    right = width
 
-			montage = build_montages(portraits, (96, 120), (5, 5))[0]
-			
-			MontageFilenamePath = os.path.join(MontageFolderPath, "Face_" + str(labelID) + ".jpg")
-			cv2.imwrite(MontageFilenamePath, montage)
+                AnnotationFilename = "face_" + str(counter) + ".txt"
+                AnnotationFilePath = os.path.join(FaceFolder, AnnotationFilename)
 
+                f = open(AnnotationFilePath, 'w')
+                f.write(str(labelID) + ' ' + str(left) + ' ' + str(top) + ' ' + str(right) + ' ' + str(bottom) + "\n")
+                f.close()
 
+                counter += 1
 
+            montage = build_montages(portraits, (96, 120), (5, 5))[0]
 
-
+            MontageFilenamePath = os.path.join(MontageFolderPath, "Face_" + str(labelID) + ".jpg")
+            cv2.imwrite(MontageFilenamePath, montage)
 
 
 if __name__ == "__main__":
-	EncodingPickleFilePath = "encodings.pickle"
+    EncodingPickleFilePath = "encodings.pickle"
 
-	faceClusterUtility = FaceClusterUtility(EncodingPickleFilePath)
-	faceImageGenerator = FaceImageGenerator(EncodingPickleFilePath)
+    faceClusterUtility = FaceClusterUtility(EncodingPickleFilePath)
+    faceImageGenerator = FaceImageGenerator(EncodingPickleFilePath)
 
-	labelIDs = faceClusterUtility.Cluster()
-	faceImageGenerator.GenerateImages(labelIDs, "ClusteredFaces", "Montage")
+    labelIDs = faceClusterUtility.Cluster()
+    faceImageGenerator.GenerateImages(labelIDs, "ClusteredFaces", "Montage")
